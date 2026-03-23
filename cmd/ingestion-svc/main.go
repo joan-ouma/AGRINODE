@@ -2,12 +2,22 @@ package main
 
 import (
 	"fmt"
+	"log"
 )
 
 func main() {
-	// This is the entry point for your ingestion microservice
-	fmt.Println("Agri-Node Ingestion Service starting...")
+	fmt.Println("========================================")
+	fmt.Println("  Agri-Node Ingestion Service Starting  ")
+	fmt.Println("========================================")
 
-	// Later, we will initialize the database, Kafka producers,
-	// and the domain use-cases right here.
+	// Note for future use:
+	// This is where we will eventually initialize the Kafka adapter
+	// and inject it into our IngestionUseCase, like this:
+	//
+	// kafkaPublisher := adapters.NewKafkaPublisher(...)
+	// ingestionUseCase := usecases.NewIngestionUseCase(kafkaPublisher)
+	//
+	// Then we will connect to the MQTT broker and start passing data to the use case.
+
+	log.Println("Service boilerplate initialized successfully. Ready for Week 2!")
 }

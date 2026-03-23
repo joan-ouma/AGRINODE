@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"agrinode/internal/core/domain"
+	"AGRINODE/internal/core/domain"
 	"context"
 )
 

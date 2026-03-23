@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"agrinode/internal/core/domain"
-	"agrinode/internal/core/ports"
+	"AGRINODE/internal/core/domain"
+	"AGRINODE/internal/core/ports"
 )
 
 // IngestionUseCase is the struct that holds our dependencies (like kafka)
