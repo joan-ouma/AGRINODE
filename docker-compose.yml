@@ -1,8 +1,4 @@
-version: '3.8'
-
 services:
-  # ... your other services ...
-
   mqtt-broker:
     image: eclipse-mosquitto:latest
     container_name: agrinode-broker
@@ -11,6 +7,18 @@ services:
       - "9001:9001"
     volumes:
       - ../mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
+      - ../mosquitto/data:/mosquitto/data
+      - ../mosquitto/log:/mosquitto/log
     restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    container_name: agrinode-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
