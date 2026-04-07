@@ -1,72 +1,73 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type SensorData struct {
-	Temperature  float32   `json:"temperature"`
-	Humidity     float32   `json:"humidity"`
-	SoilMoisture int       `json:"soilMoisture"`
-	Timestamp    time.Time `json:"timestamp"`
+	Temperature  float32 `json:"temperature"`
+	Humidity     float32 `json:"humidity"`
+	SoilMoisture int     `json:"soilMoisture"`
 }
 
-var collection *mongo.Collection
+var kafkaProducer *kafka.Producer
+var kafkaTopic = "raw-telemetry-stream"
 
 func main() {
-	// 1. connect to mongodb
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	var err error
 
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	// 1. Init Kafka Producer
+	kafkaProducer, err = kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost:9092"})
 	if err != nil {
-		log.Fatal("failed to connect to mongo: ", err)
+		log.Fatal("failed to create kafka producer: ", err)
 	}
-	defer mongoClient.Disconnect(ctx)
+	defer kafkaProducer.Close()
+	fmt.Println("kafka producer initialized.")
 
-	if err := mongoClient.Ping(ctx, nil); err != nil {
-		log.Fatal("mongo ping failed: ", err)
-	}
-	fmt.Println("connected to mongodb.")
+	// Handle delivery reports in the background
+	go func() {
+		for e := range kafkaProducer.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					fmt.Printf("delivery failed: %v\n", ev.TopicPartition.Error)
+				}
+			}
+		}
+	}()
 
-	// set up our database and collection
-	collection = mongoClient.Database("agrinode").Collection("telemetry")
-
-	// 2. set up mqtt subscriber
+	// 2. Init MQTT Subscriber
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker("tcp://localhost:1883")
-	opts.SetClientID("agrinode-ingest-svc")
+	opts.SetClientID("agrinode-ingest-kafka")
+
+	// THESE MATCH MOSQUITTO SETUP
 	opts.SetUsername("agrinode_device")
 	opts.SetPassword("farm_secret")
 
-	// assign the callback function for when a message arrives
 	opts.SetDefaultPublishHandler(messageHandler)
 
 	mqttClient := mqtt.NewClient(opts)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatal("failed to connect to mqtt: ", token.Error())
+		log.Fatal("mqtt connection failed: ", token.Error())
 	}
 	fmt.Println("connected to mqtt broker.")
 
-	// subscribe to the topic
 	topic := "agrinode/telemetry"
 	if token := mqttClient.Subscribe(topic, 0, nil); token.Wait() && token.Error() != nil {
-		log.Fatal("failed to subscribe: ", token.Error())
+		log.Fatal("mqtt subscribe failed: ", token.Error())
 	}
-	fmt.Printf("listening on topic: %s\n", topic)
+	fmt.Printf("listening on %s -> forwarding to kafka topic: %s\n", topic, kafkaTopic)
 
-	// keep the service running until we hit ctrl+c
+	// Wait for Ctrl+C
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -76,31 +77,26 @@ func main() {
 
 func messageHandler(client mqtt.Client, msg mqtt.Message) {
 	var data SensorData
-
-	// parse the incoming json
 	if err := json.Unmarshal(msg.Payload(), &data); err != nil {
-		log.Printf("error parsing json: %v\n", err)
+		log.Printf("json parse error: %v\n", err)
 		return
 	}
 
-	// stamp it with the exact time it arrived
-	data.Timestamp = time.Now()
-
-	// basic validation rule: throw out garbage data
+	// Simple validation to ensure clean data
 	if data.Humidity < 0 || data.Humidity > 100 {
-		log.Printf("validation failed: impossible humidity reading %f\n", data.Humidity)
 		return
 	}
 
-	// save to database
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// Push raw payload to Kafka
+	err := kafkaProducer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &kafkaTopic, Partition: kafka.PartitionAny},
+		Value:          msg.Payload(),
+	}, nil)
 
-	_, err := collection.InsertOne(ctx, data)
 	if err != nil {
-		log.Printf("failed to insert data: %v\n", err)
+		log.Printf("failed to enqueue message: %v\n", err)
 		return
 	}
 
-	fmt.Printf("saved to db -> temp: %.1f, humidity: %.1f, moisture: %d\n", data.Temperature, data.Humidity, data.SoilMoisture)
+	fmt.Printf("pushed to kafka -> temp: %.1f, humidity: %.1f, moisture: %d\n", data.Temperature, data.Humidity, data.SoilMoisture)
 }
