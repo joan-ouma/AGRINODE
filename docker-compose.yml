@@ -38,7 +38,7 @@ services:
 
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
+    image: confluentinc/cp-zookeeper:7.6.1
     container_name: agrinode-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -49,7 +49,7 @@ services:
 
 
   kafka:
-    image: confluentinc/cp-kafka:7.3.0
+    image: confluentinc/cp-kafka:7.6.1
     container_name: agrinode-kafka
     depends_on:
       - zookeeper
