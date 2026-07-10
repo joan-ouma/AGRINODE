@@ -1,3 +1,12 @@
+-- 0. Create the raw telemetry table
+CREATE TABLE IF NOT EXISTS telemetry (
+    id SERIAL PRIMARY KEY,
+    temperature REAL,
+    humidity REAL,
+    soil_moisture INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 1. Create the hardware nodes table
 CREATE TABLE IF NOT EXISTS nodes (
     id SERIAL PRIMARY KEY,

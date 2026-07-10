@@ -21,7 +21,7 @@ type SensorData struct {
 
 func main() {
 	// 1. Connect to PostgreSQL (Updated with your exact compose credentials)
-	connStr := "postgres://agrinode_admin:supersecretpassword@localhost:5432/agrinode?sslmode=disable"
+	connStr := "postgres://agrinode_admin:supersecretpassword@agrinode-postgres:5432/agrinode?sslmode=disable"
 	
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -36,7 +36,7 @@ func main() {
 
 	// 2. Connect to Kafka Consumer
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "agrinode-kafka:9092",
 		"group.id":          "agrinode-storage-group",
 		"auto.offset.reset": "earliest", 
 	})
@@ -71,7 +71,7 @@ func main() {
 			}
 
 			// Insert into the database
-			query := `INSERT INTO telemetry (temperature, humidity, soil_moisture) VALUES ($1, $2, $3)`
+			query := `INSERT INTO telemetry (node_id, temperature, humidity, soil_moisture) VALUES (1, $1, $2, $3)`
 			_, err = db.Exec(query, data.Temperature, data.Humidity, data.SoilMoisture)
 			
 			if err != nil {

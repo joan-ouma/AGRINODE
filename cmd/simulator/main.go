@@ -18,7 +18,7 @@ type SensorData struct {
 
 func main() {
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://localhost:1883")
+	opts.AddBroker("tcp://agrinode-broker:1883")
 	opts.SetClientID("agrinode-sim-01")
 
 	// Add these two lines so the simulator can log in:

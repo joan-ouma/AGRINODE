@@ -28,7 +28,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://agrinode-mongodb:27017"))
 	if err != nil {
 		log.Fatal("failed to connect to mongo: ", err)
 	}

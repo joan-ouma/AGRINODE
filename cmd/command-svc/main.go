@@ -25,7 +25,7 @@ type Anomaly struct {
 func main() {
 	// 1. Connect to the MQTT Broker (To talk to the ESP8266)
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://localhost:1883")
+	opts.AddBroker("tcp://agrinode-broker:1883")
 	opts.SetClientID("agrinode_command_svc")
 	opts.SetUsername("agrinode_device")
 	opts.SetPassword("farm_secret")
@@ -38,7 +38,7 @@ func main() {
 
 	// 2. Connect to Kafka (To listen for alarms)
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "agrinode-kafka:9092",
 		"group.id":          "command-group",
 		"auto.offset.reset": "earliest",
 	})

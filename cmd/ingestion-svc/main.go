@@ -25,7 +25,7 @@ func main() {
 	var err error
 
 	// 1. Init Kafka Producer
-	kafkaProducer, err = kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost:9092"})
+	kafkaProducer, err = kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "agrinode-kafka:9092"})
 	if err != nil {
 		log.Fatal("failed to create kafka producer: ", err)
 	}
@@ -46,7 +46,7 @@ func main() {
 
 	// 2. Init MQTT Subscriber
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://localhost:1883")
+	opts.AddBroker("tcp://agrinode-broker:1883")
 	opts.SetClientID("agrinode-ingest-kafka")
 
 	// THESE MATCH MOSQUITTO SETUP
