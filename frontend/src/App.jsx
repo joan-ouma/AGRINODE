@@ -22,37 +22,53 @@ import {
   Area
 } from 'recharts';
 
-// Mock telemetry data
-const generateData = () => {
-  return Array.from({ length: 20 }, (_, i) => ({
-    time: `${i}:00`,
-    temperature: 20 + Math.random() * 15,
-    humidity: 40 + Math.random() * 30,
-  }));
-};
-
 function App() {
-  const [data, setData] = useState(generateData());
-  const [currentTemp, setCurrentTemp] = useState(28.4);
-  const [currentHumidity, setCurrentHumidity] = useState(52.1);
+  const [data, setData] = useState([]);
+  const [currentTemp, setCurrentTemp] = useState(0);
+  const [currentHumidity, setCurrentHumidity] = useState(0);
+  const [isLive, setIsLive] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Simulate real-time updates
+  // Fetch real data from the Go API
   useEffect(() => {
-    const interval = setInterval(() => {
-      setData(prevData => {
-        const newData = [...prevData.slice(1)];
-        const newTemp = 20 + Math.random() * 15;
-        const newHum = 40 + Math.random() * 30;
-        newData.push({
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          temperature: newTemp,
-          humidity: newHum,
-        });
-        setCurrentTemp(newTemp.toFixed(1));
-        setCurrentHumidity(newHum.toFixed(1));
-        return newData;
-      });
-    }, 3000);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/v1/analytics/daily');
+        if (!response.ok) throw new Error('Failed to fetch data');
+        
+        const result = await response.json();
+        
+        if (result.status === 'success' && result.data) {
+          // Format the data for Recharts (reverse to get chronological order if it was DESC)
+          const formattedData = result.data.reverse().map(item => ({
+            time: new Date(item.reading_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+            temperature: item.avg_temp,
+            humidity: item.avg_humidity,
+            moisture: item.avg_moisture,
+            readings: item.total_daily_readings
+          }));
+          
+          setData(formattedData);
+          
+          if (formattedData.length > 0) {
+            const latest = formattedData[formattedData.length - 1];
+            setCurrentTemp(latest.temperature.toFixed(1));
+            setCurrentHumidity(latest.humidity.toFixed(1));
+          }
+          
+          setIsLive(true);
+          setError(null);
+        }
+      } catch (err) {
+        console.error("API Error:", err);
+        setError("API connection lost or unavailable.");
+        setIsLive(false);
+      }
+    };
+
+    fetchData();
+    // In a real app, this might be a WebSocket, but for now we poll every 10 seconds
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -84,12 +100,16 @@ function App() {
           </a>
         </nav>
 
-        <div className="glass-card" style={{ padding: '16px', marginTop: 'auto', border: '1px solid var(--accent-primary-dim)' }}>
+        <div className="glass-card" style={{ padding: '16px', marginTop: 'auto', border: `1px solid ${isLive ? 'var(--accent-primary-dim)' : 'var(--accent-danger)'}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="live-badge">System Normal</div>
+            {isLive ? (
+              <div className="live-badge">System Normal</div>
+            ) : (
+              <div className="live-badge" style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', color: 'var(--accent-danger)' }}>Disconnected</div>
+            )}
           </div>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-            All microservices running optimal.
+            {isLive ? 'API service connected to PostgreSQL.' : 'Failed to reach API gateway.'}
           </p>
         </div>
       </aside>
@@ -101,10 +121,20 @@ function App() {
             <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Telemetry Overview</h2>
             <p style={{ color: 'var(--text-muted)' }}>Real-time sensor data & system analytics</p>
           </div>
-          <div className="live-badge">
-            Live Updates
-          </div>
+          {isLive ? (
+            <div className="live-badge">Live API Connected</div>
+          ) : (
+            <div className="live-badge" style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', color: 'var(--accent-danger)' }}>
+              API Offline
+            </div>
+          )}
         </header>
+
+        {error && (
+          <div className="glass-card" style={{ padding: '16px', marginBottom: '24px', borderLeft: '4px solid var(--accent-danger)' }}>
+            <p style={{ color: 'var(--accent-danger)' }}>{error}</p>
+          </div>
+        )}
 
         {/* Metrics Grid */}
         <div className="grid-container">
@@ -116,7 +146,7 @@ function App() {
             <div className="stat-value">{currentTemp}°C</div>
             <div className="stat-footer trend-up">
               <Activity size={14} />
-              <span>Updating...</span>
+              <span>{isLive ? 'Live Tracking' : 'Offline'}</span>
             </div>
           </div>
 
@@ -128,7 +158,7 @@ function App() {
             <div className="stat-value">{currentHumidity}%</div>
             <div className="stat-footer trend-down">
               <Activity size={14} />
-              <span>Updating...</span>
+              <span>{isLive ? 'Live Tracking' : 'Offline'}</span>
             </div>
           </div>
 
@@ -137,10 +167,10 @@ function App() {
               <span>Active Nodes</span>
               <Wifi size={20} color="var(--accent-primary)" />
             </div>
-            <div className="stat-value">24 / 24</div>
-            <div className="stat-footer trend-up">
+            <div className="stat-value">{isLive ? '24 / 24' : '0 / 24'}</div>
+            <div className="stat-footer trend-up" style={{ color: isLive ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
               <Activity size={14} />
-              <span>100% Connectivity</span>
+              <span>{isLive ? '100% Connectivity' : 'No connection'}</span>
             </div>
           </div>
 
@@ -160,7 +190,7 @@ function App() {
         {/* Charts Section */}
         <div className="glass-card chart-container">
           <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '1.2rem' }}>Sensor Telemetry Stream</h3>
+            <h3 style={{ fontSize: '1.2rem' }}>Sensor Telemetry Stream (Daily Averages)</h3>
           </div>
           
           <div style={{ height: '320px', width: '100%' }}>
@@ -195,6 +225,7 @@ function App() {
                   fillOpacity={1} 
                   fill="url(#colorTemp)" 
                   strokeWidth={2}
+                  name="Avg Temp (°C)"
                 />
                 <Area 
                   type="monotone" 
@@ -203,6 +234,7 @@ function App() {
                   fillOpacity={1} 
                   fill="url(#colorHum)" 
                   strokeWidth={2}
+                  name="Avg Humidity (%)"
                 />
               </AreaChart>
             </ResponsiveContainer>
