@@ -424,4 +424,30 @@ h1, h2, h3, h4, h5, h6 {
     height: 250px !important;
   }
 
+  .settings-card {
+    padding: 20px !important;
+  }
+  
+  .data-logs-card {
+    padding: 16px !important;
+  }
+  
+  .page-header {
+    margin-bottom: 24px !important;
+  }
+
+  .page-header h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  .data-table th, .data-table td {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+  
+  .table-container {
+    margin: 0 -16px;
+    border-radius: 0;
+    padding: 0 16px;
+  }
 }
