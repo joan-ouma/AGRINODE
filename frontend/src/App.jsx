@@ -147,7 +147,7 @@ function App() {
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between' }}>
           <h3 style={{ fontSize: '1.2rem' }}>Sensor Telemetry Stream (Daily Averages)</h3>
         </div>
-        <div style={{ height: '320px', width: '100%' }}>
+        <div className="chart-wrapper" style={{ height: '320px', width: '100%' }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
@@ -229,7 +229,7 @@ function App() {
   };
 
   const renderDataLogs = () => (
-    <div className="glass-card" style={{ padding: '24px' }}>
+    <div className="glass-card data-logs-card" style={{ padding: '24px' }}>
       <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>Historical Telemetry Logs (MongoDB)</h3>
       <div className="table-container">
         <table className="data-table">
@@ -265,7 +265,7 @@ function App() {
   );
 
   const renderSettings = () => (
-    <div className="glass-card" style={{ padding: '32px', maxWidth: '600px', margin: '0 auto' }}>
+    <div className="glass-card settings-card" style={{ padding: '32px', maxWidth: '600px', margin: '0 auto' }}>
       <h3 style={{ fontSize: '1.2rem', marginBottom: '30px' }}>System Preferences</h3>
       <div className="settings-list">
         <div className="setting-item">
@@ -363,7 +363,7 @@ function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
+        <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>{activeTab}</h2>
             <p style={{ color: 'var(--text-muted)' }}>
