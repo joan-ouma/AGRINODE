@@ -408,5 +408,20 @@ h1, h2, h3, h4, h5, h6 {
 
   .grid-container {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
+  
+  .stat-card {
+    padding: 16px;
+  }
+
+  .chart-container {
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .chart-wrapper {
+    height: 250px !important;
+  }
+
 }
