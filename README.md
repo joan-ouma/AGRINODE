@@ -1,6 +1,6 @@
-# Agri-Node 
+# AGRINODE
 
-Agri-Node is a full-stack, event-driven telemetry platform designed for agricultural IoT. It features a complete closed-loop automation architecture capable of ingesting real-time sensor data, detecting environmental anomalies, and autonomously issuing mitigation commands to edge devices.
+AGRINODE is a full-stack, event-driven telemetry platform designed for agricultural IoT. It features a complete closed-loop automation architecture capable of ingesting real-time sensor data, detecting environmental anomalies, and autonomously issuing mitigation commands to edge devices.
 
 ##  Architecture
 
